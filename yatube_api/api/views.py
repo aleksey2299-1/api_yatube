@@ -1,19 +1,10 @@
-from rest_framework import viewsets, permissions
-from api.serializers import (
-    CommentSerializer, PostSerializer, GroupSerializer
-)
+from django.shortcuts import get_object_or_404
 
 from posts.models import Comment, Group, Post
+from rest_framework import permissions, viewsets
 
-UNSAFE_METHODS = ['PUT', 'PATCH', 'DELETE']
-
-
-class OwnProfilePermission(permissions.BasePermission):
-
-    def has_object_permission(self, request, view, obj):
-        if request.method not in UNSAFE_METHODS:
-            return True
-        return obj.author == request.user
+from api.serializers import CommentSerializer, GroupSerializer, PostSerializer
+from api.permissions import OwnProfilePermission
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -31,7 +22,8 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user,
-                        post=Post.objects.get(id=self.kwargs['post_id']))
+                        post=get_object_or_404(Post,
+                                               id=self.kwargs['post_id']))
 
     def get_queryset(self):
         return Comment.objects.filter(post=self.kwargs['post_id'])
